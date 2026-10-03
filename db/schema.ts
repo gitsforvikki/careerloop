@@ -7,6 +7,7 @@ import {
   integer,
   timestamp,
   jsonb,
+  boolean,
   pgEnum,
   index,
   primaryKey,
@@ -101,12 +102,17 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 // ============================================================================
 
 /**
- * Users: Application owners / future authentication identity.
+ * Users: Application owners and Better Auth authentication identity.
+ * Reused directly as Better Auth's user model via { user: { modelName: "users" } }.
  */
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  // Required by Better Auth for email verification tracking
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  // Optional profile avatar URL supported by Better Auth
+  image: text("image"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

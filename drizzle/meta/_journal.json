@@ -8,6 +8,13 @@
       "when": 1791042970872,
       "tag": "0000_curious_norman_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791052503337,
+      "tag": "0001_nebulous_frank_castle",
+      "breakpoints": true
     }
   ]
 }
