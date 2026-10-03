@@ -1,28 +1,29 @@
 import * as React from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, type AuthUser } from "@/components/app-sidebar";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 
 interface DashboardShellProps {
   children: React.ReactNode;
+  user?: AuthUser;
 }
 
 /**
  * DashboardShell:
  *
  * Provides the overarching responsive layout shell for all authenticated/dashboard routes:
- * - Desktop: Fixed/sticky left sidebar (260px width)
+ * - Desktop: Fixed/sticky left sidebar (260px width) with authenticated user profile
  * - Mobile/Tablet: Slide-out drawer with mobile header bar
  * - Main: Content area with automatic overflow scrolling and responsive padding
  */
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ children, user }: DashboardShellProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground">
       {/* Mobile top navigation (< md) */}
-      <MobileSidebar />
+      <MobileSidebar user={user} />
 
       {/* Desktop left sidebar (>= md) */}
       <div className="hidden md:block w-64 shrink-0 h-screen sticky top-0">
-        <AppSidebar />
+        <AppSidebar user={user} />
       </div>
 
       {/* Main content viewport */}

@@ -4,7 +4,11 @@ import * as React from "react";
 import { Dialog } from "@base-ui/react";
 import { Menu, X, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, type AuthUser } from "@/components/app-sidebar";
+
+interface MobileSidebarProps {
+  user?: AuthUser;
+}
 
 /**
  * MobileSidebar:
@@ -12,7 +16,7 @@ import { AppSidebar } from "@/components/app-sidebar";
  * Provides a mobile top navigation header (< md screens) with a menu button
  * that triggers an accessible slide-over drawer containing the full AppSidebar.
  */
-export function MobileSidebar() {
+export function MobileSidebar({ user }: MobileSidebarProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -69,7 +73,7 @@ export function MobileSidebar() {
 
             {/* Sidebar content */}
             <div className="flex-1 min-h-0">
-              <AppSidebar onNavigate={() => setOpen(false)} />
+              <AppSidebar user={user} onNavigate={() => setOpen(false)} />
             </div>
           </Dialog.Popup>
         </Dialog.Portal>

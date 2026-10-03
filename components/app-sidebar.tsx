@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu } from "@base-ui/react";
 import {
   LayoutDashboard,
   Briefcase,
@@ -12,9 +13,20 @@ import {
   BarChart3,
   Workflow,
   Sparkles,
+  LogOut,
+  ChevronsUpDown,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { authClient } from "@/lib/auth-client";
+
+export interface AuthUser {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
 
 /**
  * Primary navigation item definitions for CareerLoop.
@@ -52,9 +64,24 @@ export const navigationItems = [
   },
 ];
 
+function getInitials(name?: string | null, email?: string | null): string {
+  if (name?.trim()) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (email?.trim()) {
+    return email.slice(0, 2).toUpperCase();
+  }
+  return "U";
+}
+
 interface AppSidebarProps {
   className?: string;
   onNavigate?: () => void;
+  user?: AuthUser;
 }
 
 /**
@@ -63,10 +90,32 @@ interface AppSidebarProps {
  * Primary application navigation sidebar containing:
  * - Brand identity with icon mark
  * - Primary navigation links with active state highlighting
- * - Footer with theme switcher and user profile placeholder
+ * - Footer with theme switcher and authenticated user profile with Sign Out
  */
-export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
+export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+
+  const displayName = user?.name || "CareerLoop User";
+  const displayEmail = user?.email || "Workspace User";
+  const initials = getInitials(user?.name, user?.email);
+
+  async function handleSignOut() {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+
+    try {
+      await authClient.signOut();
+      if (onNavigate) {
+        onNavigate();
+      }
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <aside
@@ -138,31 +187,84 @@ export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
       </div>
 
       {/* Footer / Account / Theme */}
-      <div className="p-3 border-t border-sidebar-border mt-auto space-y-3 shrink-0">
+      <div className="p-3 border-t border-sidebar-border mt-auto space-y-2 shrink-0">
         {/* Theme row */}
         <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-sidebar-accent/40 text-xs font-medium text-muted-foreground">
           <span>Theme</span>
           <ThemeToggle />
         </div>
 
-        {/* Profile / Account Placeholder */}
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent/50 transition-colors cursor-pointer">
-          <div className="relative size-8 rounded-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center border border-primary/20 shrink-0">
-            VK
-            <span
-              className="absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 ring-2 ring-sidebar"
-              aria-hidden="true"
-            />
-          </div>
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-xs font-medium text-sidebar-foreground truncate">
-              Vikash Kumar
-            </span>
-            <span className="text-[11px] text-muted-foreground truncate">
-              Career Workspace
-            </span>
-          </div>
-        </div>
+        {/* Authenticated User Menu */}
+        <Menu.Root>
+          <Menu.Trigger
+            render={
+              <button
+                type="button"
+                aria-label="User profile and session options"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-sidebar-accent/60 transition-colors cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              />
+            }
+          >
+            <div className="relative size-8 rounded-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center border border-primary/20 shrink-0 overflow-hidden">
+              {user?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.image}
+                  alt={displayName}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
+              <span
+                className="absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 ring-2 ring-sidebar"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-xs font-semibold text-sidebar-foreground truncate">
+                {displayName}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {displayEmail}
+              </span>
+            </div>
+            <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
+          </Menu.Trigger>
+
+          <Menu.Portal>
+            <Menu.Positioner
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="z-50 w-58"
+            >
+              <Menu.Popup className="z-50 w-full overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none">
+                <div className="px-2.5 py-2 border-b border-border mb-1">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {displayEmail}
+                  </p>
+                </div>
+
+                <Menu.Item
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="relative flex cursor-pointer select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive outline-none transition-colors hover:bg-destructive/10 data-[highlighted]:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                >
+                  {isSigningOut ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <LogOut className="size-3.5" />
+                  )}
+                  <span>{isSigningOut ? "Signing out..." : "Sign Out"}</span>
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
       </div>
     </aside>
   );
